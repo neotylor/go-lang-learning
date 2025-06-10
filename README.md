@@ -1,42 +1,21 @@
-# go-lang-learning
+# Learn Golang  🐹
 
-In **Go (Golang)**, there are **25 keywords** (also called **reserved words**). These keywords have special meaning in the language and **cannot be used as names** for variables, functions, or identifiers.
+Welcome to the **Learn Go (Golang)** guide! This repository is designed for absolute beginners who want to learn Go through a structured and hands-on approach.
 
-### ✅ List of Go Keywords (25 total):
+## 📚 Contents
 
-```
-break       default      func         interface    select
-case        defer        go           map          struct
-chan        else         goto         package      switch
-const       fallthrough  if           range        type
-continue    for          import       return       var
-```
+- 📌 [00 - Introduction](./01-introduction)
+- 💻 [01 - Installation](./02-installation)
+- ✍️ [02 - Basic Syntax](./03-basic-syntax)
+- 🔁 [03 - Control Structures](./04-control-structures)
+- 🧠 [04 - Functions](./05-functions)
+- 🧮 [05 - Arrays, Slices, Maps](./06-arrays-slices-maps)
+- 🧱 [06 - Structs and Interfaces](./07-structs-interfaces)
+- ⚙️ [07 - Concurrency (Goroutines & Channels)](./08-concurrency)
+- 📦 [08 - Modules & Packages](./09-modules-packages)
+- 🛠️ [09 - Mini Projects](./10-projects)
+- 🌐 [10 - Extra Resources](./11-resources)
 
-### 🔹 Categories:
+> Start from the `01-introduction` and move step by step. Each folder has example code and explanations.
 
-1. **Control Flow**:
-
-   * `if`, `else`, `switch`, `case`, `default`, `for`, `range`, `break`, `continue`, `fallthrough`, `goto`
-
-2. **Declarations**:
-
-   * `var`, `const`, `type`, `func`, `package`, `import`
-
-3. **Concurrency**:
-
-   * `go`, `select`, `chan`, `defer`
-
-4. **Types and Interfaces**:
-
-   * `struct`, `interface`, `map`
-
-5. **Functions and Return**:
-
-   * `return`
-
----
-
-### 🧠 Note:
-
-* These keywords are **built into the language syntax**.
-* Go also has **predeclared identifiers** (like `int`, `string`, `true`, `false`, `nil`, `append`, etc.), which aren't keywords but are built-in.
+Happy Learning!
