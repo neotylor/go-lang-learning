@@ -46,4 +46,23 @@ func main() {
 
 	fmt.Println("Numbers:", numbers)
 
+	fmt.Println("lenght of numbers", len(numbers))
+
+	fmt.Println("Value of fruit name at 2 index is", fruitNames[2])
+
+	var price [5]int
+
+	fmt.Println("Price is", price) //Price is [0 0 0 0 0]
+
+	/*
+		Default non-Assign value
+		int, float: 0
+		string: empty string
+		boolean: false
+		pointer: nil
+
+	*/
+
+	var newPrice [5]int
+	fmt.Printf("New price empty array values %q:", newPrice) //New price empty array values ['\x00' '\x00' '\x00' '\x00' '\x00']:
 }
