@@ -20,4 +20,25 @@ func main() {
 		fmt.Println("Start of the week")
 	}
 
+	char := 'a'
+
+	switch char {
+	case 'a', 'e', 'i', 'o', 'u':
+		fmt.Println("It's a vowel")
+	default:
+		fmt.Println("It's a consonant")
+	}
+
+	score := 85
+
+	switch {
+	case score >= 90:
+		fmt.Println("Grade: A")
+	case score >= 80:
+		fmt.Println("Grade: B")
+	case score >= 70:
+		fmt.Println("Grade: C")
+	default:
+		fmt.Println("Grade: F")
+	}
 }

@@ -65,4 +65,8 @@ func main() {
 
 	var newPrice [5]int
 	fmt.Printf("New price empty array values %q:", newPrice) //New price empty array values ['\x00' '\x00' '\x00' '\x00' '\x00']:
+
+	/*
+		%q is quoted string
+	*/
 }
