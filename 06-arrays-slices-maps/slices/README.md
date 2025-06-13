@@ -1,4 +1,3 @@
-````markdown
 # 📘 Go Language - Slices
 
 Slices are powerful, flexible, and commonly used in Go. They provide a more dynamic alternative to arrays, allowing you to work with collections of data efficiently.
@@ -11,7 +10,7 @@ Slices are powerful, flexible, and commonly used in Go. They provide a more dyna
 nums := []int{10, 20, 30} // A slice of integers
 fmt.Println(nums[0])      // Access first element
 fmt.Println(len(nums))    // Length of the slice
-````
+```
 
 📄 [View Code → `slice-basics.go`](./slice-basics.go)
 

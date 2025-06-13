@@ -27,7 +27,7 @@ Navigate to the folder and run:
 
 ```bash
 go run main.go
-````
+```
 
 > 📌 Make sure Go is properly installed. If not, refer to the [installation guide](../../02-installation/README.md).
 

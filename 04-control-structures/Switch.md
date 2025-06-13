@@ -15,7 +15,7 @@ case condition2:
 default:
     // default code block (optional)
 }
-````
+```
 
 ---
 

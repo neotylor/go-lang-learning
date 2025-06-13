@@ -1,8 +1,5 @@
 Perfect — now that you're install GO in you machine, now you in next step.
 
-### 📄 `03-basic-syntax/README.md`
-
-````md
 # 📘 Basic Syntax – Go Language
 
 This section introduces the fundamental building blocks of the Go programming language. It's designed for absolute beginners to understand the syntax and structure of Go programs.
@@ -57,7 +54,7 @@ Navigate into any folder and run:
 
 ```bash
 go run main.go
-````
+```
 
 > 📌 Make sure Go is properly installed. If not, refer to the [installation guide](../../02-installation/README.md).
 

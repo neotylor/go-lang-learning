@@ -53,7 +53,7 @@ Run any example by navigating to this folder in your terminal and using:
 
 ```bash
 go run <filename>.go
-````
+```
 
 For example:
 

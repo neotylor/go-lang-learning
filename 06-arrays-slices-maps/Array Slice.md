@@ -1,4 +1,3 @@
-<!-- ````markdown -->
 # 📘 Go Slice & Array Example – Learning Slice and Array Basics
 
 This simple Go program demonstrates the basics of working with **slices** and **arrays** in Go, including:
@@ -76,7 +75,7 @@ func main() {
     // Print updated length
     fmt.Println("Updated Numbers's array length:", len(numbers)) // Output: 20
 }
-````
+```
 
 ---
 
