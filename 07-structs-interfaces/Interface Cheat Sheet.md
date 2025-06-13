@@ -1,4 +1,4 @@
-### 🧑‍🏫 Go Interfaces – Complete Tutorial & Course
+# 🧑‍🏫 Go Interfaces – Complete Tutorial & Course
 
 ---
 

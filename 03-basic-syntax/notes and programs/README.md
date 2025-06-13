@@ -18,6 +18,7 @@ Each subfolder focuses on a key concept with:
 | User Input             | Reading input from the user           | [main.go](./04_user_input/main.go)   |
 | Functions              | Writing and calling functions         | [main.go](./05_functions/main.go)    |
 | Error Handling         | Basic error handling in Go            | [main.go](./06_error_handling/main.go) |
+| Pointer                | Basic Pointer in Go                   | [main.go](./07_pointer/main.go)      |
 
 ---
 

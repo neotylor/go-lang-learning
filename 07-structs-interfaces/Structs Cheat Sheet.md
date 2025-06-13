@@ -1,4 +1,4 @@
-### 🧑‍🏫 Go Structs – Complete Tutorial & Course
+# 🧑‍🏫 Go Structs – Complete Tutorial & Course
 
 ---
 

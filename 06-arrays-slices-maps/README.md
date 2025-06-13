@@ -1,4 +1,4 @@
-Sure! Here's a well-structured and clearer version of your `README`-style explanation for the Go code you shared. It includes proper formatting, detailed comments, and improved readability for learners or developers reviewing the code.
+Here's a well-structured and clearer version of your `README`-style explanation for the Go code you shared. It includes proper formatting, detailed comments, and improved readability for learners or developers reviewing the code.
 
 ---
 

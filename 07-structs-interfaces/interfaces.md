@@ -1,4 +1,4 @@
-### ✅ All Possible Examples for Interfaces in Go
+# ✅ All Possible Examples for Interfaces in Go
 
 These examples cover:
 

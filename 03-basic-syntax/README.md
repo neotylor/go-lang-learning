@@ -75,9 +75,3 @@ By the end of this section, you’ll be comfortable with:
 > 🔗 Continue learning in [04-control-structures](../04-control-structures)
 
 Happy coding! 🎉
-
-```
-
----
-
-

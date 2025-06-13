@@ -1,4 +1,4 @@
-### Introduction to Go (Golang)
+## Introduction to Go (Golang)
 
 Go, commonly known as **Golang**, is an open-source programming language developed by **Google** in 2007 and released publicly in 2009. Go was created by **Robert Griesemer**, **Rob Pike**, and **Ken Thompson** with the goal of simplifying software development while maintaining efficiency and scalability.
 
