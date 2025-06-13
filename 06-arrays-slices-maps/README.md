@@ -117,5 +117,3 @@ go run main.go
 ```
 
 ---
-
-Let me know if you'd like this in a `README.md` file format or if you want to include visuals or diagrams to better illustrate slice growth and memory!
