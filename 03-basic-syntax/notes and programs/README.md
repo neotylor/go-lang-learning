@@ -19,6 +19,7 @@ Each subfolder focuses on a key concept with:
 | Functions              | Writing and calling functions         | [main.go](./05_functions/main.go)    |
 | Error Handling         | Basic error handling in Go            | [main.go](./06_error_handling/main.go) |
 | Pointer                | Basic Pointer in Go                   | [main.go](./07_pointer/main.go)      |
+| Data Conversion        | Basic Data Conversion in Go           | [main.go](./08_data_conversion/main.go)  |
 
 ---
 
