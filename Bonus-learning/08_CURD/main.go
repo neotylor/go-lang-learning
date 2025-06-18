@@ -9,7 +9,7 @@ import (
 )
 
 type Todo struct {
-	Id        int    `json:"id"`
+	Id        int    `json:"id,omitempty"` // ,omitempty is optional, depending on the API
 	Todo      string `json:"todo"`
 	Completed bool   `json:"completed"`
 	UserId    int    `json:"userId"`
@@ -84,24 +84,61 @@ func postRequest() {
 
 	data, _ := ioutil.ReadAll(res.Body)
 	fmt.Println("Response Data", string(data))
+	fmt.Println("Response status", res.Status)
+}
+
+func putRequest() {
+	println("Learn Put method")
+	putUrl := "https://dummyjson.com/todos/1"
+	todo := Todo{
+		Todo:      "This is a new todo",
+		Completed: false,
+		UserId:    23,
+	}
+
+	// convert the Todo struct to JSON
+	jsonData, err_ := json.Marshal(todo)
+	if err_ != nil {
+		fmt.Println("Error while marshal todo", err_)
+		return
+	}
+
+	//convert json data to string
+	jsonString := string(jsonData)
+
+	// convert string data to response
+	jsonReader := strings.NewReader(jsonString)
+
+	// Create put request
+	req, err := http.NewRequest(http.MethodPut, putUrl, jsonReader)
+	if err != nil {
+		fmt.Println("Error creating PUT request", err)
+		return
+	}
+	req.Header.Set("Content-type", "application/json")
+
+	//Send the Request
+	client := http.Client{}
+
+	httpRes, resErr := client.Do(req)
+
+	if resErr != nil {
+		fmt.Println("Error sending PUT request", resErr)
+		return
+	}
+
+	defer httpRes.Body.Close()
+
+	fmt.Println("Response status", httpRes.Status, req)
+
+	// convert response to readable data
+	data, _ := ioutil.ReadAll(httpRes.Body)
+	fmt.Println("Response Data", string(data))
 }
 func main() {
 	println("Learn CRUN in GO lang")
 	// getRequest()
-	postRequest()
+	// postRequest()
+	putRequest()
 
 }
-
-/*
-	fetch('https://dummyjson.com/todos/add', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    todo: 'Use DummyJSON in the project',
-    completed: false,
-    userId: 5,
-  })
-})
-.then(res => res.json())
-.then(console.log);
-*/
