@@ -135,10 +135,36 @@ func putRequest() {
 	data, _ := ioutil.ReadAll(httpRes.Body)
 	fmt.Println("Response Data", string(data))
 }
+
+func deleteRequest() {
+	println("Learn Delete method")
+	deleteUrl := "https://dummyjson.com/todos/1"
+
+	// Create put request
+	req, err := http.NewRequest(http.MethodDelete, deleteUrl, nil)
+	if err != nil {
+		fmt.Println("Error creating Delete request", err)
+		return
+	}
+
+	//Send the Request
+	client := http.Client{}
+
+	httpRes, resErr := client.Do(req)
+
+	if resErr != nil {
+		fmt.Println("Error sending Delete request", resErr)
+		return
+	}
+
+	defer httpRes.Body.Close()
+
+	fmt.Println("Response status", httpRes.Status, "\n", req)
+}
 func main() {
 	println("Learn CRUN in GO lang")
 	// getRequest()
 	// postRequest()
-	putRequest()
-
+	// putRequest()
+	deleteRequest()
 }
