@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"golang.org/x/crypto/bcrypt"
 	_ "modernc.org/sqlite"
@@ -70,9 +71,6 @@ func createURL(original string) (string, error) {
 		id, original, now, expires,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrExecDone) {
-			return createURL(original)
-		}
 		return "", err
 	}
 	return id, nil
@@ -134,9 +132,27 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 func validateAdmin(user, pass string) bool {
 	storedUser := os.Getenv(authUsernameEnv)
 	storedHash := os.Getenv(authPasswordEnv)
+
+	// Manually unescape the \$
+	if len(storedHash) > 0 && storedHash[0] == '\\' && storedHash[1] == '$' {
+		storedHash = storedHash[1:]
+	}
+
+	fmt.Println("Request User:", user)
+	fmt.Println("Request pass:", pass)
+	fmt.Println("Stored User:", storedUser)
+	fmt.Println("Stored Hash:", storedHash)
+	// storedHash = "$2a$10$XGBwTN0Xdnqjw7jYuQVDb.ScD4kyGMMt6gspTRN4w2m3fOpFjk1Du"
+
 	if user != storedUser {
 		return false
 	}
+	// err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(pass))
+	// if err != nil {
+	// 	fmt.Println("Password mismatch:", err)
+	// 	return false
+	// }
+	// return true
 	return bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(pass)) == nil
 }
 
@@ -146,7 +162,28 @@ func hashPassword(raw string) (string, error) {
 }
 
 func main() {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	initDB()
+
+	/*
+		password := "yourpassword" // <- exact password you'll use in curl
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(hash))
+
+		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+		if err != nil {
+			fmt.Println("❌ Password does NOT match")
+		} else {
+			fmt.Println("✅ Password matches")
+		}
+	*/
 
 	r := mux.NewRouter()
 	r.HandleFunc("/{id}", redirectHandler).Methods("GET")
