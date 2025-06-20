@@ -19,3 +19,10 @@ func main() {
 	}
 	fmt.Println(string(hash))
 }
+
+/*
+// For Create Password
+// Run it with your password:
+go run genhash.go yourpassword
+
+*/

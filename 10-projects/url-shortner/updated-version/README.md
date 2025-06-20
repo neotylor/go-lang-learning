@@ -4,7 +4,7 @@
 1. **Install dependencies**:
 
    ```bash
-   go get github.com/gorilla/mux github.com/matoous/go-nanoid/v2 modernc.org/sqlite golang.org/x/crypto/bcrypt
+   go get github.com/gorilla/mux github.com/joho/godotenv github.com/matoous/go-nanoid/v2 modernc.org/sqlite golang.org/x/crypto/bcrypt
    ```
 2. **Prep admin credentials**:
 

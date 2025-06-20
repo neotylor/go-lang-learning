@@ -162,7 +162,7 @@ func deleteRequest() {
 	fmt.Println("Response status", httpRes.Status, "\n", req)
 }
 func main() {
-	println("Learn CRUN in GO lang")
+	println("Learn CRUD in GO lang")
 	// getRequest()
 	// postRequest()
 	// putRequest()
