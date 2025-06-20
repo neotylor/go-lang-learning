@@ -31,9 +31,13 @@ func (r *FileRepository) readTodos() ([]Todo, error) {
 	file, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []Todo{}, nil
+			return []Todo{}, nil // file doesn't exist → return empty list
 		}
 		return nil, err
+	}
+
+	if len(file) == 0 { // ✅ fix: skip unmarshalling empty files
+		return []Todo{}, nil
 	}
 
 	err = json.Unmarshal(file, &todos)
@@ -52,6 +56,7 @@ func (r *FileRepository) writeTodos(todos []Todo) error {
 }
 
 func (r *FileRepository) Add(task string) error {
+	// func (r *FileRepository) Add(todo Todo) error {
 	todos, err := r.readTodos()
 	if err != nil {
 		return err
