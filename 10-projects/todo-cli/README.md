@@ -506,3 +506,26 @@ go run main.go delete 1
 
 ---
 
+### ✅ What's Next?
+
+You can develop some more things:
+
+* Fill in the contents of each CLI command (add, list, complete, delete)
+* Add file-based JSON storage
+* Add test cases
+* Add logging or config parsing
+* Add Cobra command auto-completion
+
+Would you like me to generate and fill in the contents of each of the major files?
+
+
+## 📦 Next Steps
+
+* Add unit tests?
+* Add color to the CLI output?
+* Support for due dates or priorities?
+* Convert to use BoltDB or SQLite for persistent storage?
+
+Let me know! if you enhance!
+
+Happy Coding!

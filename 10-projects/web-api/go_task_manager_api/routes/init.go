@@ -4,7 +4,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func RegisterAllRoutes(r *mux.Router) {
+func InitRoutes(r *mux.Router) {
 	RegisterAuthRoutes(r) // Register /login and /register routes
 	RegisterTaskRoutes(r) // Register protected task routes
+	// Add future route groups here
 }

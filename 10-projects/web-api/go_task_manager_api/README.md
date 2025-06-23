@@ -1164,89 +1164,1245 @@ If you're running tests multiple times and don't want duplicate username errors,
 ```go
 database.DB.Where("username = ?", "testuser").Delete(&models.User{})
 ```
+---
 
-Insert that line before the POST request in the test function.
+✅ Create Central Model Initializer! This improves maintainability and keeps `main.go` clean by abstracting model registration to a single place.
 
 ---
 
+## ✅ Step-by-Step: Create Central Model Initializer
+
+### 📁 1. Create `models/init.go`
+
+```go
+package models
+
+func InitModels() {
+	InitTaskModel()
+	InitUserModel()
+}
+```
+
+> You can add more models here later (e.g. `InitProjectModel()`, `InitCommentModel()`).
+
+---
+
+### 🧼 2. Clean up `main.go`
+
+Update your `main.go`:
+
+```go
+func main() {
+	database.Connect()
+	models.InitModels() // ✅ single call to migrate all models
+
+	r := mux.NewRouter()
+	routes.RegisterAuthRoutes(r)
+	routes.RegisterTaskRoutes(r)
+
+	log.Println("Server starting at http://localhost:8080")
+	http.ListenAndServe(":8080", r)
+}
+```
+
+---
+
+Now your model setup is:
+
+* 🔁 DRY (no repetition)
+* 📦 Centralized
+* 💡 Easy to extend
+
+
+✅ Let’s centralize route registration as well — just like models — to make your `main.go` super clean and scalable.
+
+---
+
+## ✅ Step-by-Step: Central Route Initialization
+
+### 📁 1. Create `routes/init.go`
+
+```go
+package routes
+
+import (
+	"github.com/gorilla/mux"
+)
+
+func InitRoutes(r *mux.Router) {
+	RegisterAuthRoutes(r)
+	RegisterTaskRoutes(r)
+	// Add future route groups here
+}
+```
+
+---
+
+### 🧼 2. Update `main.go`
+
+Replace this:
+
+```go
+routes.RegisterAuthRoutes(r)
+routes.RegisterTaskRoutes(r)
+```
+
+With:
+
+```go
+routes.InitRoutes(r)
+```
+
+Now your `main.go` is beautifully organized:
+
+```go
+func main() {
+	database.Connect()
+	models.InitModels() // One-liner for all DB models
+
+	r := mux.NewRouter()
+	routes.InitRoutes(r) // One-liner for all routes
+
+	log.Println("Server starting at http://localhost:8080")
+	http.ListenAndServe(":8080", r)
+}
+```
+
+---
+
+This structure gives you:
+
+* ✅ Better codebase organization
+* 📦 Easier onboarding for new developers
+* 🔁 Easy scaling as routes/models grow
+
+---
+
+Let's now create a centralized **middleware initializer** for reusable middlewares (like `JWTMiddleware` or logging).
+
+---
+
+## ✅ Step-by-Step: Central Middleware Setup
+
+### 📁 1. Create `middleware/init.go`
+
+```go
+package middleware
+
+import (
+	"net/http"
+)
+
+// WrapWithMiddlewares applies all global middlewares to the router
+func WrapWithMiddlewares(next http.Handler) http.Handler {
+	// You can chain more middlewares here like logging, CORS, etc.
+	return LoggingMiddleware(next) // example: wrap with logging
+}
+```
+
+> You can later expand this to include:
+
+```go
+return CORSMiddleware(LoggingMiddleware(next))
+```
+
+---
+
+### 📁 2. Add a Simple Logging Middleware (optional)
+
+📄 Add this in `middleware/logging.go`:
+
+```go
+package middleware
+
+import (
+	"log"
+	"net/http"
+	"time"
+)
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log.Printf("[%s] %s %s", r.Method, r.RequestURI, time.Since(start))
+		next.ServeHTTP(w, r)
+	})
+}
+```
+
+---
+
+### 🧼 3. Update `main.go`
+
+Wrap the router:
+
+```go
+wrappedRouter := middleware.WrapWithMiddlewares(r)
+http.ListenAndServe(":8080", wrappedRouter)
+```
+
+Now `main.go` looks clean, centralized, and fully extensible:
+
+```go
+func main() {
+	database.Connect()
+	models.InitModels()
+
+	r := mux.NewRouter()
+	routes.InitRoutes(r)
+
+	log.Println("Server starting at http://localhost:8080")
+	wrappedRouter := middleware.WrapWithMiddlewares(r)
+	http.ListenAndServe(":8080", wrappedRouter)
+}
+```
+
+---
+
+✅ You now have:
+
+* `models.InitModels()` – for DB setup
+* `routes.InitRoutes()` – for route wiring
+* `middleware.WrapWithMiddlewares()` – for middleware chain
+
+
+---
+
+✅ Let's add a **CORS middleware** to your Go API to allow frontend clients (like React/Next.js) to interact with your backend.
+
+---
+
+## 🌐 Step-by-Step: Add CORS Middleware
+
+### 📁 1. Create `middleware/cors.go`
+
+```go
+package middleware
+
+import (
+	"net/http"
+)
+
+func CORSMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow specific origins here — use "*" only in development
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Allow specific headers
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Allow specific methods
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+```
+
+---
+
+### ✅ 2. Update `WrapWithMiddlewares()` in `middleware/init.go`
+
+```go
+func WrapWithMiddlewares(next http.Handler) http.Handler {
+	return CORSMiddleware(LoggingMiddleware(next))
+}
+```
+
+> You can chain more in this order if needed:
+
+```go
+return JWTMiddleware(CORSMiddleware(LoggingMiddleware(next)))
+```
+
+---
+
+### 🔁 3. Restart Server & Test
+
+When you make a request from a frontend (e.g., `localhost:3000`), the CORS headers will now allow it.
+
+---
+
+✅ You now have fully organized middleware for:
+
+* 🔐 JWT Auth
+* 📋 Logging
+* 🌐 CORS
+
+---
+
+✅ Organizing your logic into a `services/` layer is a best practice — it separates business logic from controller and routing concerns.
+
+Let’s do it step by step.
+
+---
+
+## 📦 Step-by-Step: Create a `services/` Layer
+
+### 🗂 Folder Structure
+
+```
+go_task_manager_api/
+├── services/
+│   ├── auth_service.go
+│   └── task_service.go
+```
+
+---
+
+### ✅ 1. Create `services/auth_service.go`
+
+```go
+package services
+
+import (
+	"errors"
+
+	"go_task_manager_api/database"
+	"go_task_manager_api/models"
+	"golang.org/x/crypto/bcrypt"
+)
+
+func RegisterUser(username, password string) error {
+	var existing models.User
+	if err := database.DB.Where("username = ?", username).First(&existing).Error; err == nil {
+		return errors.New("username already taken")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user := models.User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+
+	return database.DB.Create(&user).Error
+}
+
+func AuthenticateUser(username, password string) (models.User, error) {
+	var user models.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		return user, errors.New("user not found")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return user, errors.New("invalid credentials")
+	}
+
+	return user, nil
+}
+```
+
+---
+
+### ✅ 2. Update `controllers/auth_controller.go` to use `authService`
+
+```go
+func Register(w http.ResponseWriter, r *http.Request) {
+	var req models.User
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Username == "" || req.Password == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if err := services.RegisterUser(req.Username, req.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "registered successfully"})
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var req AuthRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	user, err := services.AuthenticateUser(req.Username, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	token, err := middleware.GenerateToken(user.Username)
+	if err != nil {
+		http.Error(w, "Token generation failed", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+```
+
+---
+
+### ✅ 3. (Optional) Create `services/task_service.go`
+
+Later, if you want to abstract task operations, you could do:
+
+```go
+package services
+
+import (
+	"go_task_manager_api/database"
+	"go_task_manager_api/models"
+)
+
+func CreateTask(task *models.Task) error {
+	return database.DB.Create(task).Error
+}
+
+func GetAllTasks() ([]models.Task, error) {
+	var tasks []models.Task
+	err := database.DB.Find(&tasks).Error
+	return tasks, err
+}
+```
+
+---
+
+### ✅ Benefits:
+
+* 📚 Clear separation of concerns
+* 🔁 Reusable logic for CLI, GraphQL, or gRPC later
+* 🔒 Better for unit testing and mocking
+
+---
+
+Perfect! Let’s write unit tests for the `authService` functions: `RegisterUser` and `AuthenticateUser`.
+
+We'll place them in `services/auth_service_test.go`.
+
+---
+
+## ✅ 1. Test File Setup
+
+### 📁 `services/auth_service_test.go`
+
+```go
+package services
+
+import (
+	"testing"
+
+	"go_task_manager_api/database"
+	"go_task_manager_api/models"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+func TestRegisterUser(t *testing.T) {
+	database.Connect()
+	models.InitUserModel()
+
+	username := "test_register_user"
+	password := "test123"
+
+	// Clean up if user already exists
+	database.DB.Where("username = ?", username).Delete(&models.User{})
+
+	err := RegisterUser(username, password)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	// Confirm user was created
+	var user models.User
+	result := database.DB.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		t.Fatalf("user was not created: %v", result.Error)
+	}
+}
+
+func TestAuthenticateUser(t *testing.T) {
+	database.Connect()
+	models.InitUserModel()
+
+	username := "test_login_user"
+	password := "testpass123"
+
+	// Clean slate
+	database.DB.Where("username = ?", username).Delete(&models.User{})
+
+	// Insert user manually
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	user := models.User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+	database.DB.Create(&user)
+
+	// Test authentication
+	_, err := AuthenticateUser(username, password)
+	if err != nil {
+		t.Fatalf("expected valid credentials, got error: %v", err)
+	}
+
+	// Test invalid credentials
+	_, err = AuthenticateUser(username, "wrongpass")
+	if err == nil {
+		t.Fatal("expected error for wrong password, got nil")
+	}
+}
+```
+
+---
+
+## ✅ 2. Run Tests
+
+```bash
+go test ./services -v
+```
+
+---
+
+## 🔎 Expected Output
+
+```
+=== RUN   TestRegisterUser
+--- PASS: TestRegisterUser (0.12s)
+=== RUN   TestAuthenticateUser
+--- PASS: TestAuthenticateUser (0.09s)
+PASS
+```
+
+---
+
+✅ Done: You now have test coverage for your core authentication service logic!
+
+## 🔧 Next Steps: Add validation (e.g. min password length)
+
+Let’s add input validation — particularly **minimum password length** and basic username checks — to improve security and data integrity.
+
+---
+
+## ✅ Step-by-Step: Add Validation to Registration
+
+### 📍 1. Update `services.RegisterUser()` in `services/auth_service.go`
+
+Update the function to add validation logic:
+
+```go
+func RegisterUser(username, password string) error {
+	if len(username) < 3 {
+		return errors.New("username must be at least 3 characters")
+	}
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+
+	var existing models.User
+	if err := database.DB.Where("username = ?", username).First(&existing).Error; err == nil {
+		return errors.New("username already taken")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user := models.User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+
+	return database.DB.Create(&user).Error
+}
+```
+
+---
+
+## ✅ 2. Re-run Unit Tests
+
+Your test `TestRegisterUser()` will now fail **if** the password is too short — which is what you want.
+
+If you'd like to add a test to verify the **validation logic itself**, here's an optional test case:
+
+---
+
+### 📄 Add to `auth_service_test.go`
+
+```go
+func TestRegisterUserWithShortPassword(t *testing.T) {
+	err := RegisterUser("validuser", "123") // too short
+	if err == nil || err.Error() != "password must be at least 6 characters" {
+		t.Errorf("expected password validation error, got: %v", err)
+	}
+}
+```
+
+---
+
+✅ Done: You now have input validation + test coverage for:
+
+* ❌ Short passwords
+* ❌ Short usernames
+* ✅ Existing usernames
+
+---
+
+✅ Perfect — let’s move validation logic into a reusable utility function to keep your service layer clean and consistent.
+
+---
+
+## 📦 Step-by-Step: Create Reusable Validator Utility
+
+### 📁 1. Create `utils/validators/validators.go`
+
+```go
+package validators
+
+import (
+	"errors"
+	"unicode"
+)
+
+func ValidateUserInput(username, password string) error {
+	if len(username) < 3 {
+		return errors.New("username must be at least 3 characters")
+	}
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+	if !containsDigit(password) {
+		return errors.New("password must include at least one number")
+	}
+	if !containsSymbol(password) {
+		return errors.New("password must include at least one special character")
+	}
+	return nil
+}
+
+func containsDigit(s string) bool {
+	for _, ch := range s {
+		if unicode.IsDigit(ch) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsSymbol(s string) bool {
+	for _, ch := range s {
+		if unicode.IsSymbol(ch) || unicode.IsPunct(ch) {
+			return true
+		}
+	}
+	return false
+}
+```
+
+---
+
+### 🛠 2. Update `services.RegisterUser()` to use it
+
+```go
+import "go_task_manager_api/utils/validators"
+
+func RegisterUser(username, password string) error {
+	if err := validators.ValidateUserInput(username, password); err != nil {
+		return err
+	}
+
+	var existing models.User
+	if err := database.DB.Where("username = ?", username).First(&existing).Error; err == nil {
+		return errors.New("username already taken")
+	}
+
+	// Continue with hashing and saving
+	...
+}
+```
+
+---
+
+### 🧪 3. Optional: Add Unit Test for Validator
+
+📁 `utils/validators/validators_test.go`:
+
+```go
+package validators
+
+import "testing"
+
+func TestValidateUserInput(t *testing.T) {
+	tests := []struct {
+		username string
+		password string
+		wantErr  bool
+	}{
+		{"ab", "pass123!", true},
+		{"validuser", "short", true},
+		{"validuser", "longbutno123", true},
+		{"validuser", "NoSymbol123", true},
+		{"validuser", "StrongPass1!", false},
+	}
+
+	for _, tt := range tests {
+		err := ValidateUserInput(tt.username, tt.password)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("ValidateUserInput(%q, %q) = %v, wantErr %v", tt.username, tt.password, err, tt.wantErr)
+		}
+	}
+}
+```
+
+---
+
+### ✅ Result
+
+You now have:
+
+* 🔁 Reusable validation logic in one place
+* ✅ Password strength checks (length, digit, symbol)
+* 🧪 Test coverage for validators
+
+---
+
+## ✅ Next Step: Add `/me` endpoint to fetch the logged-in user.
+
+✅ Let's add a `/me` endpoint to return the currently authenticated user's info using the JWT token.
+
+---
+
+## 🧩 Step-by-Step: Add `/me` Endpoint
+
+### 📄 1. Add `GetProfile()` in `auth_controller.go`
+
+```go
+// GetProfile godoc
+// @Summary Get logged-in user info
+// @Description Returns the authenticated user's data
+// @Tags auth
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /me [get]
+func GetProfile(w http.ResponseWriter, r *http.Request) {
+	username := r.Context().Value("username")
+	if username == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"username": username.(string),
+	})
+}
+```
+
+> ✅ Note: This assumes your JWT middleware sets `username` in `context.WithValue()`.
+
+---
+
+### 🛡 2. Update `routes/auth_routes.go`
+
+Add:
+
+```go
+r.Handle("/me", middleware.JWTMiddleware(http.HandlerFunc(controllers.GetProfile))).Methods("GET")
+```
+
+Now `RegisterAuthRoutes()` will look like:
+
+```go
+func RegisterAuthRoutes(r *mux.Router) {
+	r.HandleFunc("/login", controllers.Login).Methods("POST")
+	r.HandleFunc("/register", controllers.Register).Methods("POST")
+	r.Handle("/me", middleware.JWTMiddleware(http.HandlerFunc(controllers.GetProfile))).Methods("GET")
+}
+```
+
+---
+
+### 🔐 3. JWT Context Injection (already assumed done)
+
+Make sure your `JWTMiddleware` injects the username into the context:
+
+```go
+ctx := context.WithValue(r.Context(), "username", claims["username"])
+```
+
+---
+
+## ✅ Usage
+
+**Request:**
+
+```http
+GET /me
+Authorization: Bearer <your-jwt-token>
+```
+
+**Response:**
+
+```json
+{
+  "username": "admin"
+}
+```
+
+---
+
+JWT Context Injection (if not already done yet)! Let's update your `JWTMiddleware` to inject the username into the request context — so that `/me` (and future protected routes) can access it easily.
+
+---
+
+## ✅ Step-by-Step: Add JWT Context Injection
+
+### 📄 1. Update `middleware/jwt_auth.go`
+
+Make sure your middleware:
+
+* Parses the token
+* Extracts `"username"` from JWT claims
+* Injects it into `r.Context()`
+
+---
+
+### ✅ Updated `JWTMiddleware` function:
+
+```go
+package middleware
+
+import (
+	"context"
+	"net/http"
+	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var JwtSecret = []byte("secret-key") // use env var in production
+
+func JWTMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			http.Error(w, "Missing or invalid Authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+			return JwtSecret, nil
+		})
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok || claims["username"] == nil {
+			http.Error(w, "Invalid claims", http.StatusUnauthorized)
+			return
+		}
+
+		// ✅ Inject username into request context
+		ctx := context.WithValue(r.Context(), "username", claims["username"])
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+```
+
+---
+
+### ✅ Now your `/me` endpoint can access:
+
+```go
+username := r.Context().Value("username").(string)
+```
+
+And return it as JSON.
+
+---
+
+## 🔧 Next Steps:Add a test for the `/me` endpoint with a mocked JWT token?
+
+✅ Let's add a unit test for the `/me` endpoint using a **mocked valid JWT token**.
+
+---
+
+## 📦 Step-by-Step: Test `/me` with JWT Token
+
+### 📁 1. Add to `auth_controller_test.go`
+
+```go
+func TestGetProfile(t *testing.T) {
+	database.Connect()
+	models.InitUserModel()
+
+	// Generate a mock token
+	token, err := middleware.GenerateToken("testuser")
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	req, err := http.NewRequest("GET", "/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr := httptest.NewRecorder()
+
+	router := mux.NewRouter()
+	router.Handle("/me", middleware.JWTMiddleware(http.HandlerFunc(GetProfile))).Methods("GET")
+	router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %d", rr.Code)
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if resp["username"] != "testuser" {
+		t.Errorf("expected username 'testuser', got '%s'", resp["username"])
+	}
+}
+```
+
+---
+
+### 🧪 2. Run the Test
+
+```bash
+go test ./controllers -v
+```
+
+---
+
+### ✅ Output (Expected)
+
+```
+=== RUN   TestGetProfile
+--- PASS: TestGetProfile (0.01s)
+```
+
+This confirms that:
+
+* ✅ JWT token is accepted
+* ✅ `username` is correctly injected into context
+* ✅ `/me` returns the correct payload
+
+---
+
+## 🔧 Next Steps: extend JWT to include user ID for future DB queries
+
+✅ Now! Extending the JWT to include the **user ID** will make it easy to fetch full user records from the database later.
+
+---
+
+## 🧩 Step-by-Step: Include `userID` in JWT Token
+
+---
+
+### 📄 1. Update `GenerateToken()` in `middleware/jwt_auth.go`
+
+Update it to include both `username` **and** `userID`:
+
+```go
+func GenerateToken(username string, userID uint) (string, error) {
+	claims := jwt.MapClaims{
+		"username": username,
+		"userID":   userID,
+		"exp":      time.Now().Add(72 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JwtSecret)
+}
+```
+
+---
+
+### 🛠 2. Update Login Controller to Use New Signature
+
+In `auth_controller.go`, modify this:
+
+```go
+token, err := middleware.GenerateToken(user.Username, user.ID)
+```
+
+---
+
+### 🧠 3. Update JWT Middleware to Inject Both `userID` and `username` into Context
+
+```go
+ctx := context.WithValue(r.Context(), "username", claims["username"])
+ctx = context.WithValue(ctx, "userID", uint(claims["userID"].(float64)))
+next.ServeHTTP(w, r.WithContext(ctx))
+```
+
+> 🔐 Note: JWT stores numbers as `float64` — we convert to `uint`.
+
+---
+
+### ✅ 4. Example `/me` Update (Optional)
+
+Now in `/me` you can access both:
+
+```go
+userID := r.Context().Value("userID").(uint)
+username := r.Context().Value("username").(string)
+```
+
+---
+
+## ✅ Done!
+
+Your JWT token now securely includes:
+
+* 🔐 `userID`
+* 🙋 `username`
+* ⏳ `exp`
+
+And your API context is ready for **DB-based lookups**.
+
+## ✅ Next Step: Add a unit test for the /me endpoint
+
+Great! Now that your JWT includes both `username` and `userID`, let’s write a **unit test** for the `/me` endpoint that:
+
+* Authenticates with a valid JWT.
+* Verifies both `username` and `userID` are available.
+* Ensures it returns `200 OK`.
+
+---
+
+## ✅ Step-by-Step: Unit Test for `/me`
+
+### 📁 1. Add to `auth_controller_test.go`
+
+```go
+func TestGetProfile(t *testing.T) {
+	database.Connect()
+	models.InitUserModel()
+
+	// Step 1: Insert test user
+	username := "testuser_me"
+	password := "StrongPass1!"
+	database.DB.Where("username = ?", username).Delete(&models.User{}) // clean slate
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	user := models.User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+	database.DB.Create(&user)
+
+	// Step 2: Generate token with user ID
+	token, err := middleware.GenerateToken(user.Username, user.ID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	// Step 3: Prepare request
+	req, err := http.NewRequest("GET", "/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.Handle("/me", middleware.JWTMiddleware(http.HandlerFunc(GetProfile))).Methods("GET")
+	router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %d", rr.Code)
+	}
+
+	var resp map[string]interface{}
+	err = json.NewDecoder(rr.Body).Decode(&resp)
+	if err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp["username"] != username {
+		t.Errorf("expected username '%s', got '%s'", username, resp["username"])
+	}
+
+	if uint(resp["userID"].(float64)) != user.ID {
+		t.Errorf("expected userID %d, got %v", user.ID, resp["userID"])
+	}
+}
+```
+
+---
+
+### 📄 2. Optional: Update `/me` Handler to Return `userID` Too
+
+If you haven't yet, update `GetProfile()` in `auth_controller.go`:
+
+```go
+func GetProfile(w http.ResponseWriter, r *http.Request) {
+	username := r.Context().Value("username")
+	userID := r.Context().Value("userID")
+
+	if username == nil || userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"username": username.(string),
+		"userID":   userID.(uint),
+	})
+}
+```
+
+---
+
+### ✅ 3. Run the Test
+
+```bash
+go test ./controllers -v
+```
+
+You should see:
+
+```
+=== RUN   TestGetProfile
+--- PASS: TestGetProfile (0.01s)
+```
+
+---
+
+## ✅ Next Step: Update docs
+
+✅ Let’s update your **Swagger/OpenAPI docs** to reflect the new `/me` endpoint with the extended JWT that includes both `username` and `userID`.
+
+---
+
+## 📄 Step-by-Step: Document `/me` Endpoint
+
+Open your `auth_controller.go` and **add or update the Swagger comment block above `GetProfile()`** like so:
+
+```go
+// GetProfile godoc
+// @Summary      Get logged-in user info
+// @Description  Returns the authenticated user's username and ID from the JWT token.
+// @Tags         auth
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Router       /me [get]
+func GetProfile(w http.ResponseWriter, r *http.Request) {
+    ...
+}
+```
+
+---
+
+## 🔐 Step 2: Confirm BearerAuth is Defined in `docs/docs.go` or `main.go`
+
+Somewhere in your `docs` package or `main.go` (if you're using swag CLI), ensure this is defined:
+
+```go
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+```
+
+This tells Swagger UI that the `/me` endpoint uses JWT in the `Authorization` header.
+
+---
+
+## 🔁 Step 3: Rebuild Swagger Docs
+
+Run this command from the root of your project (where `main.go` lives):
+
+```bash
+swag init
+```
+
+This will regenerate the `docs/` folder with updated Swagger annotations.
+
+---
+
+## ✅ Result
+
+When you open Swagger UI (e.g., `http://localhost:8080/swagger/index.html`), you'll now see:
+
+* `/me` listed under **auth**
+* It will prompt for `Bearer <token>`
+* Shows `200` response with `username` and `userID`
+
+---
+
+-------------------------------------
+
+
+
+
+
+Would you like me to:
+
+
+* Add a new `/me/details` route that fetches user from DB?
+* Document all response fields more explicitly using a Go struct instead of `map[string]interface{}`?
+* Add failure tests (e.g. no token or invalid token)?
+* Add support for returning full user info (by querying DB using username)?
 
 //////Post development/////////
 Would you like to:
 
-* Add `/me` endpoint to fetch the logged-in user?
-* Implement role-based access (e.g. admin-only routes)?
-* Or write unit tests for registration and login?
+* Add a unit test for the `/me` endpoint?
+* Or auto-fetch full user details from DB (not just username)?
+* Add a `/me/details` that fetches full user info from DB using the `userID`?
+* Add role-based access later using `role` claim in token?
+* Add failure cases (invalid token, missing token)?
+* Or refactor JWT middleware to use custom types (e.g. `type ContextKey string`) for cleaner context handling?
 
+
+* Implement role-based access (e.g. admin-only routes)?
 * Add validation (e.g. min password length)?
 * Automatically log in the user after registration (i.e. return JWT)?
-* Or start writing tests for this endpoint?
+* Email validation next?
+* A password strength validator (e.g. must include digits/symbols)?
 
+* Apply the same pattern to `Task` validation?
+* Or refactor error handling into a shared helper for consistent JSON error responses?
 
-
-
-### ✅ Next Step:
-
-Would you like me to:
-
-* Update `main.go` to call `models.InitUserModel()`?
-* Proceed to implement `/register` in `auth_controller.go`?
-
-Let me know if you want both.
-
-Would you like me to:
-
-1. Create a `User` model and migration?
-2. Add `/register` logic in `auth_controller.go`?
-3. Store hashed passwords using `bcrypt`?
-
-Let me know if you want all of the above or just a specific part.
-
-
-Would you like to:
-
-* Add user registration next?
-* Or create unit tests for your API?
-
-
-
-### 🔧 Next Steps:
-
-2. **Create login/register endpoints that issue JWT tokens.**
-
-Would you like me to register this `/login` route inside your `task_routes.go` file, or would you prefer to create a separate `auth_routes.go` file for authentication-related endpoints?
-
-Would you like me to:
-
-* Add the `JWTMiddleware` to your task routes?
-* Create a basic `auth_controller.go` for login and token generation?
-
-Let me know which one you'd like to do first.
-
-
-
-Would you like me to help add `swag init` to a make command or script for ease of use? Or should we move on to adding authentication?
-
-Would you like to:
 
 * Add Swagger/OpenAPI docs?
 * Add basic authentication?
 * Or move to Dockerizing this app?
-
-
-Would you like me to also help add tests for `/login` or JWT-protected routes with mocks?
-
-
-Would you like to:
-
-Add validation (e.g. min password length)?
-
 Automatically log in the user after registration (i.e. return JWT)?
 
 
-Would you like me to summarize all the testable endpoints and help you create a full test coverage plan?
-
-Let me know if you want:
-
+// Unit Test Files
+* Add tests for `taskService`?
+* Mock the DB with `gorm.io/gorm/logger` and `sqlmock` for isolated unit testing?
+* start writing tests for this endpoint?
+* create unit tests for your API?
 * To test invalid login attempts
 * To test protected routes using the returned token
+
+* Restrict CORS to specific domains for production?
+
+### ✅ Next Step:
+
 * Or to add these to a CI workflow (like GitHub Actions)
+
+### 🔧 Next Steps:
+
+
+Would you like me to summarize all the testable endpoints and help you create a full test coverage plan?
+Would you like me to help you create a similar centralized initializer for middleware or services next?

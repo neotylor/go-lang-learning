@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/database"
+	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/middleware"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/models"
 
 	"github.com/gorilla/mux"
@@ -75,12 +76,12 @@ func TestRegisterUser(t *testing.T) {
 	router.HandleFunc("/register", Register).Methods("POST")
 
 	//Optional Enhancement (clean DB before test)
-	database.DB.Where("username = ?", "testuser").Delete(&models.User{})
+	database.DB.Where("username = ?", "test_register_user").Delete(&models.User{})
 
 	// Define request payload
 	payload := models.User{
-		Username: "testuser",
-		Password: "password123",
+		Username: "test_register_user",
+		Password: "Pass123!",
 	}
 	body, _ := json.Marshal(payload)
 
@@ -95,5 +96,58 @@ func TestRegisterUser(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusCreated {
 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, status)
+	}
+}
+
+func TestGetProfile(t *testing.T) {
+	database.Connect()
+	models.InitUserModel()
+
+	// Step 1: Insert test user
+	username := "testuser_me"
+	password := "StrongPass1!"
+	database.DB.Where("username = ?", username).Delete(&models.User{}) // clean slate
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	user := models.User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+	database.DB.Create(&user)
+
+	// Step 2: Generate token with user ID
+	token, err := middleware.GenerateToken(user.Username, user.ID)
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	// Step 3: Prepare request
+	req, err := http.NewRequest("GET", "/me", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.Handle("/me", middleware.JWTMiddleware(http.HandlerFunc(GetProfile))).Methods("GET")
+	router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 OK, got %d", rr.Code)
+	}
+
+	var resp map[string]interface{}
+	err = json.NewDecoder(rr.Body).Decode(&resp)
+	if err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp["username"] != username {
+		t.Errorf("expected username '%s', got '%s'", username, resp["username"])
+	}
+
+	if uint(resp["userID"].(float64)) != user.ID {
+		t.Errorf("expected userID %d, got %v", user.ID, resp["userID"])
 	}
 }

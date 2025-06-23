@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/database"
+	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/middleware"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/models"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/routes"
 
@@ -20,16 +21,25 @@ import (
 // @host            localhost:8080
 // @BasePath        /
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 func main() {
-	database.Connect()     // Step 2: Connect to MySQL database
-	models.InitTaskModel() // Step 3: Migrate Task model
-	models.InitUserModel() // Step 4: Migrate User model
+	database.Connect() // Step 2: Connect to MySQL database
+	// One-liner for all DB models
+	models.InitModels() // ✅ single call to migrate all models
 
 	r := mux.NewRouter()
-	routes.RegisterAllRoutes(r) // Register everything from one place
+	// One-liner for all routes
+	routes.InitRoutes(r) // Register everything from one place
 
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	log.Println("Server starting at http://localhost:8080")
-	http.ListenAndServe(":8080", r)
+	wrappedRouter := middleware.WrapWithMiddlewares(r)
+	http.ListenAndServe(":8080", wrappedRouter)
+
+	// http.ListenAndServe(":8080", r)
+
 }
