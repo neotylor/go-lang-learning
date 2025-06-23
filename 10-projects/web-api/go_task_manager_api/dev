@@ -1,0 +1,63 @@
+-------------------------------------
+
+
+
+
+
+Would you like me to:
+
+
+* Add a new `/me/details` route that fetches user from DB?
+* Document all response fields more explicitly using a Go struct instead of `map[string]interface{}`?
+* Add failure tests (e.g. no token or invalid token)?
+* Add support for returning full user info (by querying DB using username)?
+
+Would you like to:
+
+* Structure this token response into a shared `models.AuthResponse`?
+* Or return user info (`username`, `id`) along with the token?
+
+//////Post development/////////
+Would you like to:
+
+* Or auto-fetch full user details from DB (not just username)?
+* Add a `/me/details` that fetches full user info from DB using the `userID`?
+* Add role-based access later using `role` claim in token?
+* Add failure cases (invalid token, missing token)?
+* Or refactor JWT middleware to use custom types (e.g. `type ContextKey string`) for cleaner context handling?
+
+
+* Implement role-based access (e.g. admin-only routes)?
+
+* Email validation next?
+* A password strength validator (e.g. must include digits/symbols)?
+
+* Apply the same pattern to `Task` validation?
+* Or refactor error handling into a shared helper for consistent JSON error responses?
+
+
+* Add Swagger/OpenAPI docs?
+* Add basic authentication?
+* Or move to Dockerizing this app?
+
+
+
+// Unit Test Files
+* Add tests for `taskService`?
+* Mock the DB with `gorm.io/gorm/logger` and `sqlmock` for isolated unit testing?
+* start writing tests for this endpoint?
+* create unit tests for your API?
+* To test invalid login attempts
+* To test protected routes using the returned token
+
+* Restrict CORS to specific domains for production?
+
+### ✅ Next Step:
+
+* Or to add these to a CI workflow (like GitHub Actions)
+
+### 🔧 Next Steps:
+
+
+Would you like me to summarize all the testable endpoints and help you create a full test coverage plan?
+Would you like me to help you create a similar centralized initializer for middleware or services next?

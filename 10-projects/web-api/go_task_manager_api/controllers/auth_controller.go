@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/database"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/middleware"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/models"
 	"github.com/neotylor/go-lang-learning/tree/master/10-projects/web-api/go_task_manager_api/services"
@@ -100,8 +101,26 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 🔑 Fetch the newly created user to get ID for token
+	var user models.User
+	if err := database.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
+		http.Error(w, "User lookup failed after registration", http.StatusInternalServerError)
+		return
+	}
+
+	// 🔐 Generate JWT token
+	token, err := middleware.GenerateToken(user.Username, user.ID)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	// ✅ Respond with token
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "registered successfully"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Registered and logged in successfully",
+		"token":   token,
+	})
 }
 
 /* func Register(w http.ResponseWriter, r *http.Request) {

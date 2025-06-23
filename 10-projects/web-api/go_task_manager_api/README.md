@@ -2346,63 +2346,90 @@ When you open Swagger UI (e.g., `http://localhost:8080/swagger/index.html`), you
 
 ---
 
--------------------------------------
+## ✅ Improvement: Automatically log in the user after registration (i.e. return JWT).
 
+✅ Great idea — automatically logging in the user after registration (by returning a JWT) improves UX and saves a step for the client.
 
+Let’s modify the `Register` handler to:
 
+1. Register the user.
+2. Generate and return a JWT token (just like `/login`).
 
+---
 
-Would you like me to:
+## 🔧 Step-by-Step: Return JWT on Registration
 
+### 📄 1. Update `Register()` in `auth_controller.go`
 
-* Add a new `/me/details` route that fetches user from DB?
-* Document all response fields more explicitly using a Go struct instead of `map[string]interface{}`?
-* Add failure tests (e.g. no token or invalid token)?
-* Add support for returning full user info (by querying DB using username)?
+```go
+func Register(w http.ResponseWriter, r *http.Request) {
+	var req models.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
 
-//////Post development/////////
-Would you like to:
+	err := services.RegisterUser(req.Username, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-* Add a unit test for the `/me` endpoint?
-* Or auto-fetch full user details from DB (not just username)?
-* Add a `/me/details` that fetches full user info from DB using the `userID`?
-* Add role-based access later using `role` claim in token?
-* Add failure cases (invalid token, missing token)?
-* Or refactor JWT middleware to use custom types (e.g. `type ContextKey string`) for cleaner context handling?
+	// 🔑 Fetch the newly created user to get ID for token
+	var user models.User
+	if err := database.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
+		http.Error(w, "User lookup failed after registration", http.StatusInternalServerError)
+		return
+	}
 
+	// 🔐 Generate JWT token
+	token, err := middleware.GenerateToken(user.Username, user.ID)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
 
-* Implement role-based access (e.g. admin-only routes)?
-* Add validation (e.g. min password length)?
-* Automatically log in the user after registration (i.e. return JWT)?
-* Email validation next?
-* A password strength validator (e.g. must include digits/symbols)?
+	// ✅ Respond with token
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Registered and logged in successfully",
+		"token":   token,
+	})
+}
+```
 
-* Apply the same pattern to `Task` validation?
-* Or refactor error handling into a shared helper for consistent JSON error responses?
+---
 
+### ✅ 2. Swagger Doc Update (Optional)
 
-* Add Swagger/OpenAPI docs?
-* Add basic authentication?
-* Or move to Dockerizing this app?
-Automatically log in the user after registration (i.e. return JWT)?
+Update the `@Success` comment above the `Register()` handler:
 
+```go
+// @Success 201 {object} map[string]string
+```
 
-// Unit Test Files
-* Add tests for `taskService`?
-* Mock the DB with `gorm.io/gorm/logger` and `sqlmock` for isolated unit testing?
-* start writing tests for this endpoint?
-* create unit tests for your API?
-* To test invalid login attempts
-* To test protected routes using the returned token
+---
 
-* Restrict CORS to specific domains for production?
+### 🧪 3. Optional: Update Unit Test
 
-### ✅ Next Step:
+If you're testing the `/register` endpoint, update it to:
 
-* Or to add these to a CI workflow (like GitHub Actions)
+* Expect `201`
+* Check for `"token"` in the response body
 
-### 🔧 Next Steps:
+---
 
+## ✅ Result
 
-Would you like me to summarize all the testable endpoints and help you create a full test coverage plan?
-Would you like me to help you create a similar centralized initializer for middleware or services next?
+Now when you `POST /register`, the response is:
+
+```json
+{
+  "message": "Registered and logged in successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR..."
+}
+```
+
+You can directly use this token for `/me` or any protected route. 🎉
+
+---
